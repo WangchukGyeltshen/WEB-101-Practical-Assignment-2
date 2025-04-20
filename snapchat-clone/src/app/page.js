@@ -28,7 +28,7 @@ export default function Home() {
         <p className="text-gray-500 mb-3">or continue with downloading Snapchat WebApp</p>
         <a href="https://apps.microsoft.com/store/apps" target="_blank" rel="noopener noreferrer">
           <Image
-            src="/microsoft-badge.webp"
+            src="/microsoft-store-badge.png"
             alt="Get it from Microsoft"
             width={150}
             height={50}
