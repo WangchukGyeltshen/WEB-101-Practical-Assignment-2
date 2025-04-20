@@ -7,6 +7,11 @@ import Navbar from "@/components/Navbar";
 import SpotlightPage from "@/components/spotlight/page";
 import StoriesPage from "@/components/stories/page";
 
+// 🆕 Add your custom components
+import ChatList from "@/components/ui/ChatList";
+import CameraBox from "@/components/ui/CameraBox";
+import { FiSettings, FiUserPlus } from "react-icons/fi";
+
 export default function Home() {
   const [view, setView] = useState("home");
 
@@ -15,9 +20,9 @@ export default function Home() {
       <Navbar setView={setView} currentView={view} />
 
       <main className="flex flex-col lg:flex-row min-h-screen">
+        {/* 🏠 Home/Login */}
         {view === "home" && (
           <>
-            {/* Left: Login */}
             <div className="lg:w-1/2 flex flex-col justify-center px-10 py-16">
               <h1 className="text-3xl font-bold mb-6">Log in to Snapchat</h1>
               <p className="mb-6 text-gray-600">
@@ -64,7 +69,6 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Right: Visual */}
             <div className="lg:w-1/2 bg-[#FFF700] flex flex-col justify-center items-center p-10">
               <h2 className="text-3xl font-extrabold text-black mb-4 text-center">
                 LESS SOCIAL MEDIA.
@@ -82,7 +86,6 @@ export default function Home() {
               />
             </div>
 
-            {/* Footer */}
             <footer className="w-full bg-black text-white text-center py-3 text-sm fixed bottom-0">
               Are you a parent? Learn what we're doing to help keep{" "}
               <Link href="#" className="underline text-yellow-400">
@@ -92,10 +95,47 @@ export default function Home() {
           </>
         )}
 
+        {/* 🔦 Spotlight Page */}
         {view === "spotlight" && <SpotlightPage />}
+
+        {/* 📚 Stories Page */}
         {view === "stories" && <StoriesPage />}
 
-        {(view !== "home" && view !== "spotlight" && view !== "stories") && (
+        {/* 💬 Chat Page */}
+        {view === "chat" && (
+          <div className="flex h-screen w-full">
+            {/* Left Sidebar */}
+            <aside className="w-1/4 bg-[#1a1a1a] p-5 flex flex-col">
+              <div className="flex items-center justify-between mb-6">
+                <button className="bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white p-2 rounded-full transition duration-200">
+                  <FiSettings size={20} />
+                </button>
+                <button className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-full transition-all duration-200 shadow">
+                  <FiUserPlus size={20} />
+                </button>
+              </div>
+              <input
+                type="text"
+                placeholder="Search"
+                className="bg-[#2a2a2a] text-white p-3 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow mb-5"
+              />
+              <ChatList />
+            </aside>
+
+            {/* Middle: Camera */}
+            <main className="flex-1 bg-[#2a2a2a] flex items-center justify-center p-3">
+              <CameraBox />
+            </main>
+
+            {/* Right Sidebar */}
+            <aside className="w-1/4 bg-[#2a2a2a] flex items-center justify-center p-5">
+              <Image src="/avatar.png" alt="Bitmoji Full" width={320} height={520} />
+            </aside>
+          </div>
+        )}
+
+        {/* 📦 Placeholder for other views */}
+        {(view !== "home" && view !== "spotlight" && view !== "stories" && view !== "chat") && (
           <div className="flex flex-col items-center justify-center w-full h-screen">
             <h1 className="text-2xl font-bold mb-4">This page will be added soon</h1>
             <p className="text-gray-600">Stay tuned for updates!</p>

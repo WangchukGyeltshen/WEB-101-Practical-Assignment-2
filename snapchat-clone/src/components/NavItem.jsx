@@ -7,12 +7,12 @@ export default function NavItem({ icon, label, badge, onClick, active }) {
       }`}
     >
       {icon}
+      <span className="text-xs font-medium mt-1">{label}</span>
       {badge && (
-        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+        <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] px-1 rounded">
           {badge}
         </span>
       )}
-      <span className="text-sm font-medium">{label}</span>
     </div>
   );
 }
