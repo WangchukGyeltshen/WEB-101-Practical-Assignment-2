@@ -1,123 +1,94 @@
-// components/Spotlight.js
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { PlayIcon, ChevronDownIcon } from "lucide-react";
-import Image from "next/image";
+import { useState, useRef } from "react";
+import { PlayIcon, PauseIcon, ChevronDownIcon, HeartIcon, MessageCircleIcon, Share2Icon } from "lucide-react";
 
 export default function Spotlight() {
-  const [showVideo, setShowVideo] = useState(true);
+  const [showMore, setShowMore] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const videoRef = useRef(null);
+
+  const togglePlay = () => {
+    if (!videoRef.current) return;
+
+    if (isPlaying) {
+      videoRef.current.pause();
+    } else {
+      videoRef.current.play();
+    }
+    setIsPlaying(!isPlaying);
+  };
 
   return (
-    <div className="flex flex-col md:flex-row h-screen">
-      {/* Left Sidebar */}
-      <div className="w-full md:w-1/3 p-6 flex flex-col justify-center items-center border-r">
-        <h2 className="text-2xl font-bold mb-4">Log in to Snapchat</h2>
-        <p className="text-center mb-6 text-gray-600">
-          Chat, Snap, and video call your friends. Watch Stories and Spotlight,
-          all from your computer.
-        </p>
-
-        <input
-          type="text"
-          placeholder="Username or email address"
-          className="border rounded-lg p-3 w-full mb-4"
-        />
-
-        <a href="#" className="text-blue-500 text-sm mb-4">
-          Use phone number instead
-        </a>
-
-        <Button className="w-full mb-4">Log in</Button>
-
-        <div className="flex items-center gap-2 mb-6">
-          <Image
-            src="/microsoft-logo.png" // replace with actual logo if needed
-            alt="Microsoft"
-            width={24}
-            height={24}
+    <div className="min-h-screen flex flex-col lg:flex-row bg-gray-100 p-8">
+      {/* Left side - Spotlight Video */}
+      <div className="lg:w-2/3 flex flex-col items-center justify-center relative">
+        <div className="relative w-full max-w-md rounded-2xl overflow-hidden shadow-lg">
+          <video
+            ref={videoRef}
+            src="/your-video.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-auto object-cover"
           />
-          <span className="text-sm">Get it from Microsoft</span>
+
+          {/* Play/Pause Button */}
+          <button
+            onClick={togglePlay}
+            className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-white text-black px-6 py-3 rounded-full font-semibold flex items-center space-x-2 shadow-md hover:bg-gray-200 transition"
+          >
+            {isPlaying ? <PauseIcon size={20} /> : <PlayIcon size={20} />}
+            <span>{isPlaying ? "Pause" : "Play"}</span>
+          </button>
         </div>
 
-        <p className="text-sm">
-          Looking for the app?{" "}
-          <a href="#" className="text-blue-500">
-            Get it here.
-          </a>
-        </p>
-      </div>
-
-      {/* Spotlight Video Section */}
-      <div className="flex-1 relative bg-black flex flex-col items-center justify-center">
-        {/* Video Mockup */}
-        <div className="relative w-80 h-[500px] bg-white rounded-2xl overflow-hidden shadow-xl">
-          {showVideo ? (
-            <Image
-              src="/spotlight-placeholder.png" // upload your snapshot here
-              alt="Spotlight"
-              layout="fill"
-              objectFit="cover"
-            />
-          ) : (
-            <div className="flex items-center justify-center w-full h-full bg-gray-300">
-              <p>Video Content</p>
-            </div>
-          )}
-          <div className="absolute top-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded-full">
-            4m
-          </div>
-          <div className="absolute bottom-2 left-2 text-white font-bold">
-            Kylian Mbappé
-          </div>
+        {/* Vertical Icons beside video */}
+        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex flex-col items-center space-y-6">
+          <button className="bg-white p-3 rounded-full shadow hover:bg-gray-200 transition">
+            <HeartIcon className="text-black" size={24} />
+          </button>
+          <button className="bg-white p-3 rounded-full shadow hover:bg-gray-200 transition">
+            <MessageCircleIcon className="text-black" size={24} />
+          </button>
+          <button className="bg-white p-3 rounded-full shadow hover:bg-gray-200 transition">
+            <Share2Icon className="text-black" size={24} />
+          </button>
         </div>
 
-        <Button
-          variant="ghost"
-          onClick={() => setShowVideo(!showVideo)}
-          className="mt-6 flex items-center text-white"
+        {/* Show More Button */}
+        <button
+          onClick={() => setShowMore(!showMore)}
+          className="mt-6 flex flex-col items-center text-black"
         >
-          <ChevronDownIcon className="w-6 h-6 mr-2" />
-          More Videos
-        </Button>
+          <ChevronDownIcon size={32} className={`transition-transform ${showMore ? "rotate-180" : ""}`} />
+          <span className="text-sm">More</span>
+        </button>
+
+        {/* Hidden Content */}
+        {showMore && (
+          <div className="mt-4 text-center text-gray-700">
+            <p>More trending videos coming soon!</p>
+          </div>
+        )}
       </div>
 
-      {/* Right Info Sidebar */}
-      <div className="w-full md:w-1/3 p-6 flex flex-col justify-center items-start gap-6 border-l">
-        <h2 className="text-2xl font-bold">Get In On Snapchat's Trending Videos</h2>
-        <p className="text-gray-600">
-          Watch Viral Spotlight Videos From Popular Creators To See What's Trending.
+      {/* Right side - Info Section */}
+      <div className="lg:w-1/3 flex flex-col justify-center p-8">
+        <h1 className="text-3xl font-bold mb-4 text-gray-800">Trending on Spotlight</h1>
+        <p className="mb-6 text-gray-600">
+          Watch viral videos from popular Snapchat creators. See what's trending right now!
         </p>
 
-        <div className="bg-gray-100 p-4 rounded-xl w-full">
-          <h3 className="font-bold mb-2">In this Snap</h3>
-          <div className="flex items-center gap-4">
-            <Image
-              src="/snapcode-placeholder.png" // your snapcode image here
-              alt="Snapcode"
-              width={48}
-              height={48}
-            />
-            <div>
-              <p className="font-bold">Kylian Mbappé</p>
-              <p className="text-gray-500 text-sm">@k.mbappegames</p>
-            </div>
-          </div>
+        <div className="bg-white p-4 rounded-lg shadow-md mb-4">
+          <h2 className="text-xl font-semibold">Kylian Mbappé</h2>
+          <p className="text-gray-500">@k.mbappegames</p>
         </div>
 
-        <div className="flex items-center gap-4">
-          {/* Add your social icons */}
-          <Button variant="outline" size="icon">
-            <PlayIcon className="w-5 h-5" />
-          </Button>
-          <Button variant="outline" size="icon">
-            {/* Add icons like Facebook, WhatsApp, etc. */}
-            📤
-          </Button>
-          <Button variant="outline" size="icon">
-            🔗
-          </Button>
+        <div className="bg-white p-4 rounded-lg shadow-md">
+          <h3 className="text-lg font-semibold">Sound</h3>
+          <p className="text-gray-500">@k.mbappegames's Sound</p>
         </div>
       </div>
     </div>
