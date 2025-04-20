@@ -1,25 +1,28 @@
-"use client"; // This ensures the page is a client-side component
+'use client';
 
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
+import SpotlightPage from "@/components/spotlight/page";
+import StoriesPage from "@/components/stories/page";
+
+// 🆕 Add your custom components
 import ChatList from "@/components/ui/ChatList";
 import CameraBox from "@/components/ui/CameraBox";
-import { FiUserPlus, FiSettings } from "react-icons/fi"; // Add necessary icons
+import { FiSettings, FiUserPlus } from "react-icons/fi";
 
 export default function Home() {
-  const [view, setView] = useState("home"); // "home" | "chat"
+  const [view, setView] = useState("home");
 
   return (
     <>
-      <Navbar onNavigate={setView} /> {/* Pass setView to Navbar */}
+      <Navbar setView={setView} currentView={view} />
 
-      {view === "home" ? (
-        <>
-          {/* Login & Landing Section */}
-          <main className="flex flex-col lg:flex-row min-h-screen">
-            {/* Left side - Login section */}
+      <main className="flex flex-col lg:flex-row min-h-screen">
+        {/* 🏠 Home/Login */}
+        {view === "home" && (
+          <>
             <div className="lg:w-1/2 flex flex-col justify-center px-10 py-16">
               <h1 className="text-3xl font-bold mb-6">Log in to Snapchat</h1>
               <p className="mb-6 text-gray-600">
@@ -36,15 +39,19 @@ export default function Home() {
                 Use phone number instead
               </Link>
 
-              <button
-                className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-md mb-6"
-                onClick={() => setView("chat")} // Change view to "chat" on login
-              >
+              <button className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-md mb-6">
                 Log in
               </button>
 
-              <p className="text-gray-500 mb-3">or continue with downloading Snapchat WebApp</p>
-              <a href="https://apps.microsoft.com/store/apps" target="_blank" rel="noopener noreferrer">
+              <p className="text-gray-500 mb-3">
+                or continue with downloading Snapchat WebApp
+              </p>
+
+              <a
+                href="https://apps.microsoft.com/store/apps"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <Image
                   src="/microsoft-store-badge.png"
                   alt="Get it from Microsoft"
@@ -57,16 +64,15 @@ export default function Home() {
                 Looking for the app? Get it{" "}
                 <Link href="#" className="underline">
                   here
-                </Link>.
+                </Link>
+                .
               </p>
             </div>
 
-            {/* Right side - Visual section */}
             <div className="lg:w-1/2 bg-[#FFF700] flex flex-col justify-center items-center p-10">
               <h2 className="text-3xl font-extrabold text-black mb-4 text-center">
                 LESS SOCIAL MEDIA.
               </h2>
-
               <h2 className="text-3xl font-extrabold text-black mb-8 text-center">
                 MORE SNAPCHAT.
               </h2>
@@ -79,60 +85,63 @@ export default function Home() {
                 className="rounded-lg"
               />
             </div>
-          </main>
-        </>
-      ) : (
-        <>
-          {/* Chat UI */}
-          <div className="flex h-full">
-            {/* Sidebar */}
+
+            <footer className="w-full bg-black text-white text-center py-3 text-sm fixed bottom-0">
+              Are you a parent? Learn what we're doing to help keep{" "}
+              <Link href="#" className="underline text-yellow-400">
+                Snapchatters safe.
+              </Link>
+            </footer>
+          </>
+        )}
+
+        {/* 🔦 Spotlight Page */}
+        {view === "spotlight" && <SpotlightPage />}
+
+        {/* 📚 Stories Page */}
+        {view === "stories" && <StoriesPage />}
+
+        {/* 💬 Chat Page */}
+        {view === "chat" && (
+          <div className="flex h-screen w-full">
+            {/* Left Sidebar */}
             <aside className="w-1/4 bg-[#1a1a1a] p-5 flex flex-col">
-              {/* Header */}
               <div className="flex items-center justify-between mb-6">
-                {/* ⚙️ Settings icon button */}
                 <button className="bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white p-2 rounded-full transition duration-200">
                   <FiSettings size={20} />
                 </button>
-
-                {/* Friend Add Button stays */}
                 <button className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-full transition-all duration-200 shadow">
                   <FiUserPlus size={20} />
                 </button>
               </div>
-
-              {/* Search */}
               <input
                 type="text"
                 placeholder="Search"
                 className="bg-[#2a2a2a] text-white p-3 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow mb-5"
               />
-
-              {/* Chats */}
               <ChatList />
             </aside>
 
-            {/* Camera */}
+            {/* Middle: Camera */}
             <main className="flex-1 bg-[#2a2a2a] flex items-center justify-center p-3">
               <CameraBox />
             </main>
 
-            {/* Right Panel */}
+            {/* Right Sidebar */}
             <aside className="w-1/4 bg-[#2a2a2a] flex items-center justify-center p-5">
               <Image src="/avatar.png" alt="Bitmoji Full" width={320} height={520} />
             </aside>
           </div>
-        </>
-      )}
+        )}
 
-      {/* Footer (optional to show only on home view) */}
-      {view === "home" && (
-        <footer className="w-full bg-black text-white text-center py-3 text-sm">
-          Are you a parent? Learn what we're doing to help keep{" "}
-          <Link href="#" className="underline text-yellow-400">
-            Snapchatters safe.
-          </Link>
-        </footer>
-      )}
+        {/* 📦 Placeholder for other views */}
+        {(view !== "home" && view !== "spotlight" && view !== "stories" && view !== "chat") && (
+          <div className="flex flex-col items-center justify-center w-full h-screen">
+            <h1 className="text-2xl font-bold mb-4">This page will be added soon</h1>
+            <p className="text-gray-600">Stay tuned for updates!</p>
+          </div>
+        )}
+      </main>
     </>
   );
 }
