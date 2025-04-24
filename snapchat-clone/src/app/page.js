@@ -6,8 +6,8 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import SpotlightPage from "@/components/spotlight/page";
 import StoriesPage from "@/components/stories/page";
+import LensesPage from "@/components/lenses/page"; // ✅ Added
 
-// 🆕 Add your custom components
 import ChatList from "@/components/ui/ChatList";
 import CameraBox from "@/components/ui/CameraBox";
 import { FiSettings, FiUserPlus } from "react-icons/fi";
@@ -101,6 +101,9 @@ export default function Home() {
         {/* 📚 Stories Page */}
         {view === "stories" && <StoriesPage />}
 
+        {/* 🔍 Lenses Page */}
+        {view === "lenses" && <LensesPage />}
+
         {/* 💬 Chat Page */}
         {view === "chat" && (
           <div className="flex h-screen w-full">
@@ -135,7 +138,7 @@ export default function Home() {
         )}
 
         {/* 📦 Placeholder for other views */}
-        {(view !== "home" && view !== "spotlight" && view !== "stories" && view !== "chat") && (
+        {(view !== "home" && view !== "spotlight" && view !== "stories" && view !== "chat" && view !== "lenses") && (
           <div className="flex flex-col items-center justify-center w-full h-screen">
             <h1 className="text-2xl font-bold mb-4">This page will be added soon</h1>
             <p className="text-gray-600">Stay tuned for updates!</p>
