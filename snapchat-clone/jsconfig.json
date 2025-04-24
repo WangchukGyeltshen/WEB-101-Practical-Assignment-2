@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
+    "baseUrl": "src",  // Set base URL to src
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["*"]  // Alias @ to src/
     }
   }
 }
