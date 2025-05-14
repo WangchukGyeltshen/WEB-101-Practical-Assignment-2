@@ -6,7 +6,8 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import SpotlightPage from "@/components/spotlight/page";
 import StoriesPage from "@/components/stories/page";
-import LensesPage from "@/components/lenses/page"; // ✅ Added
+import LensesPage from "@/components/lenses/page";
+import SnapchatPlusPage from "@/components/snapchat-plus/page";
 
 import ChatList from "@/components/ui/ChatList";
 import CameraBox from "@/components/ui/CameraBox";
@@ -64,8 +65,7 @@ export default function Home() {
                 Looking for the app? Get it{" "}
                 <Link href="#" className="underline">
                   here
-                </Link>
-                .
+                </Link>.
               </p>
             </div>
 
@@ -104,6 +104,9 @@ export default function Home() {
         {/* 🔍 Lenses Page */}
         {view === "lenses" && <LensesPage />}
 
+        {/* ✨ Snapchat+ Page */}
+        {view === "snapchatplus" && <SnapchatPlusPage />}
+
         {/* 💬 Chat Page */}
         {view === "chat" && (
           <div className="flex h-screen w-full">
@@ -138,7 +141,14 @@ export default function Home() {
         )}
 
         {/* 📦 Placeholder for other views */}
-        {(view !== "home" && view !== "spotlight" && view !== "stories" && view !== "chat" && view !== "lenses") && (
+        {!(
+          view === "home" ||
+          view === "spotlight" ||
+          view === "stories" ||
+          view === "lenses" ||
+          view === "snapchatplus" ||
+          view === "chat"
+        ) && (
           <div className="flex flex-col items-center justify-center w-full h-screen">
             <h1 className="text-2xl font-bold mb-4">This page will be added soon</h1>
             <p className="text-gray-600">Stay tuned for updates!</p>

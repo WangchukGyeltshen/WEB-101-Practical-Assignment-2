@@ -1,4 +1,5 @@
-"use client"; // This makes the component a client-side component
+'use client';
+
 import NavItem from './NavItem';
 import ActionButtons from './ActionButtons';
 import { FaSnapchatGhost, FaTh } from 'react-icons/fa';
@@ -12,14 +13,14 @@ export default function Navbar({ setView, currentView }) {
     <div className="w-full flex items-center justify-between px-8 py-4 shadow-md bg-white sticky top-0 z-50">
       {/* Logo + Search */}
       <div className="flex items-center gap-4">
-        {/* Logo Icon */}
         <FaSnapchatGhost
-          onClick={() => setView("home")}
+          onClick={() => setView('home')}
           className="text-black text-2xl cursor-pointer transition-transform duration-300 ease-in-out transform hover:scale-110"
         />
-        
-        {/* Search Box */}
-        <div className="flex items-center bg-gray-100 px-4 py-1.5 rounded-full text-gray-700 text-sm hover:bg-gray-200 cursor-pointer transition-all duration-200 ease-in-out transform hover:scale-105">
+        <div
+          onClick={() => setView('search')}
+          className="flex items-center bg-gray-100 px-4 py-1.5 rounded-full text-gray-700 text-sm hover:bg-gray-200 cursor-pointer transition-all duration-200 ease-in-out transform hover:scale-105"
+        >
           <FiSearch className="w-4 h-4 mr-2" />
           <span className="font-medium">Search</span>
         </div>
@@ -27,53 +28,41 @@ export default function Navbar({ setView, currentView }) {
 
       {/* Navigation Items */}
       <div className="flex items-center gap-10">
-        {/* Stories */}
         <NavItem
           icon={<PiSquaresFourBold size={24} />}
           label="Stories"
-          onClick={() => setView("stories")}
-          active={currentView === "stories"}
+          onClick={() => setView('stories')}
+          active={currentView === 'stories'}
         />
-        
-        {/* Spotlight */}
         <NavItem
           icon={<MdOutlinePlayArrow size={24} />}
           label="Spotlight"
-          onClick={() => setView("spotlight")}
-          active={currentView === "spotlight"}
+          onClick={() => setView('spotlight')}
+          active={currentView === 'spotlight'}
         />
-        
-        {/* Chat */}
         <NavItem
           icon={<MdOutlineChatBubble size={24} />}
           label="Chat"
-          onClick={() => setView("chat")}
-          active={currentView === "chat"}
+          onClick={() => setView('chat')}
+          active={currentView === 'chat'}
         />
-        
-        {/* Lenses */}
         <NavItem
           icon={<TbStarsFilled size={24} />}
           label="Lenses"
-          onClick={() => setView("lenses")}
-          active={currentView === "lenses"}
+          onClick={() => setView('lenses')}
+          active={currentView === 'lenses'}
         />
-        
-        {/* Snapchat+ */}
         <NavItem
-          icon={<FaSnapchatGhost size={24} />}
+          icon={<TbStarsFilled size={24} />}
           label="Snapchat+"
-          onClick={() => setView("snapchatPlus")}
-          active={currentView === "snapchatPlus"}
+          onClick={() => setView('snapchatplus')}
+          active={currentView === 'snapchatplus'}
         />
       </div>
 
-      {/* Actions (menu icon and buttons) */}
+      {/* Action Buttons */}
       <div className="flex items-center gap-3">
-        {/* Menu Icon */}
         <FaTh className="bg-gray-100 p-2 rounded-full text-2xl hover:bg-gray-200 cursor-pointer transition-colors transform hover:scale-110" />
-        
-        {/* Action Buttons (can be customized further) */}
         <ActionButtons />
       </div>
     </div>
