@@ -23,7 +23,8 @@ export default function ChatList() {
       {chats.map((chat, idx) => (
         <Link
           key={idx}
-          href={`/chat/${encodeURIComponent(chat.name)}`}
+          href={`/chat/${chat.name}`}
+
           className="flex items-center justify-between p-3 hover:bg-[#333] rounded-lg transition-colors duration-150"
         >
           <div className="flex items-center gap-3">
