@@ -17,6 +17,30 @@ import { FiSettings, FiUserPlus } from "react-icons/fi";
 export default function Home() {
   const [view, setView] = useState("home");
   const [showSignup, setShowSignup] = useState(false);
+  const [loginUsername, setLoginUsername] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+
+  const handleMainLogin = async (e) => {
+    e.preventDefault();
+    setLoginError("");
+    try {
+      const res = await fetch("http://localhost:3001/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: loginUsername, password: loginPassword }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert("Login successful!");
+        // Optionally redirect or set user state here
+      } else {
+        setLoginError(data.message || "Login failed");
+      }
+    } catch (err) {
+      setLoginError("Network error");
+    }
+  };
 
   return (
     <>
@@ -33,19 +57,37 @@ export default function Home() {
                   Chat, Snap, and video call your friends. Watch Stories and Spotlight, all from your computer.
                 </p>
 
-                <input
-                  type="text"
-                  placeholder="Username or email address"
-                  className="mb-4 p-3 border border-gray-300 rounded-md w-full"
-                />
+                <form onSubmit={handleMainLogin}>
+                  <input
+                    type="text"
+                    placeholder="Username or email address"
+                    className="mb-4 p-3 border border-gray-300 rounded-md w-full"
+                    value={loginUsername}
+                    onChange={e => setLoginUsername(e.target.value)}
+                    required
+                  />
 
-                <Link href="#" className="text-sm text-blue-600 mb-4">
-                  Use phone number instead
-                </Link>
+                  <Link href="#" className="text-sm text-blue-600 mb-4">
+                    Use phone number instead
+                  </Link>
 
-                <button className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-md mb-6">
-                  Log in
-                </button>
+                  <input
+                    type="password"
+                    placeholder="Password"
+                    className="mb-4 p-3 border border-gray-300 rounded-md w-full"
+                    value={loginPassword}
+                    onChange={e => setLoginPassword(e.target.value)}
+                    required
+                  />
+
+                  <button
+                    type="submit"
+                    className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-md mb-6 w-full"
+                  >
+                    Log in
+                  </button>
+                  {loginError && <div className="text-red-500 mb-2">{loginError}</div>}
+                </form>
 
                 <p className="text-gray-500 mb-3">
                   or continue with downloading Snapchat WebApp

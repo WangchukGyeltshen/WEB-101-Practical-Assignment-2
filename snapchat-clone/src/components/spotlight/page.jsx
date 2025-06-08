@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   ChevronDownIcon,
 } from "lucide-react";
@@ -9,7 +9,23 @@ import { FaHeart, FaCommentDots, FaShareAlt, FaPlay, FaPause } from "react-icons
 export default function Spotlight() {
   const [showMore, setShowMore] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
+  const [videoUrl, setVideoUrl] = useState("");
+  const [username, setUsername] = useState(""); // New state
+  const [password, setPassword] = useState(""); // New state
+  const [loginError, setLoginError] = useState(""); // New state
   const videoRef = useRef(null);
+
+  // Fetch video data from backend
+  useEffect(() => {
+    fetch("http://localhost:3001/api/spotlight")
+      .then((res) => res.json())
+      .then((data) => {
+        setVideoUrl(data.videoUrl);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch spotlight video:", err);
+      });
+  }, []);
 
   const togglePlay = () => {
     if (!videoRef.current) return;
@@ -21,6 +37,28 @@ export default function Spotlight() {
     setIsPlaying(!isPlaying);
   };
 
+  // Handle login
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoginError("");
+    try {
+      const res = await fetch("http://localhost:3001/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        // Login successful, handle token or redirect here
+        alert("Login successful!");
+      } else {
+        setLoginError(data.message || "Login failed");
+      }
+    } catch (err) {
+      setLoginError("Network error");
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-gray-100">
       {/* Left Panel - Login Section */}
@@ -29,15 +67,32 @@ export default function Spotlight() {
         <p className="text-gray-600 mb-4">
           Chat, Snap, and video call your friends. Watch Stories and Spotlight, all from your computer.
         </p>
-        <input
-          type="text"
-          placeholder="Username or email address"
-          className="border border-gray-300 rounded-md px-4 py-2 mb-3 w-full"
-        />
+        <form onSubmit={handleLogin}>
+          <input
+            type="text"
+            placeholder="Username or email address"
+            className="border border-gray-300 rounded-md px-4 py-2 mb-3 w-full"
+            value={username}
+            onChange={e => setUsername(e.target.value)}
+            required
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            className="border border-gray-300 rounded-md px-4 py-2 mb-3 w-full"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            required
+          />
+          <button
+            type="submit"
+            className="bg-blue-500 text-white py-2 rounded-md font-semibold mb-4 hover:bg-blue-600 transition w-full"
+          >
+            Log in
+          </button>
+          {loginError && <div className="text-red-500 mb-2">{loginError}</div>}
+        </form>
         <a href="#" className="text-blue-600 text-sm mb-3">Use phone number instead</a>
-        <button className="bg-blue-500 text-white py-2 rounded-md font-semibold mb-4 hover:bg-blue-600 transition">
-          Log in
-        </button>
         <button className="flex items-center justify-center border border-gray-300 py-2 rounded-md mb-4">
           <img src="https://img.icons8.com/color/24/000000/windows-10.png" alt="Microsoft Logo" className="mr-2" />
           Get it from Microsoft
@@ -52,7 +107,7 @@ export default function Spotlight() {
         <div className="relative w-[300px] h-[530px] rounded-xl overflow-hidden shadow-lg">
           <video
             ref={videoRef}
-            src="/your-video.mp4"
+            src={videoUrl} // Use fetched video URL
             autoPlay
             loop
             muted
