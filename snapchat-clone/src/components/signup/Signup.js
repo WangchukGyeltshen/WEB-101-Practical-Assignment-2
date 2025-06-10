@@ -1,78 +1,67 @@
-import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 
 export default function Signup({ onBack }) {
   const [firstName, setFirstName] = useState("");
-  const [firstNameTouched, setFirstNameTouched] = useState(false);
   const [lastName, setLastName] = useState("");
   const [month, setMonth] = useState("");
   const [day, setDay] = useState("");
   const [year, setYear] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  // Validation helpers
-  const isFirstNameValid = firstName.trim().length > 0;
-  const isMonthValid = Number(month) >= 1 && Number(month) <= 12 && month.length > 0;
-  const isDayValid = Number(day) >= 1 && Number(day) <= 31 && day.length > 0;
-  const isYearValid = Number(year) >= 1900 && Number(year) <= 2100 && year.length === 4;
-  const isUsernameValid = username.trim().length > 0;
-  const isPasswordValid = password.length >= 8;
+  // Simple validation
+  const isBirthdayValid =
+    Number(month) >= 1 &&
+    Number(month) <= 12 &&
+    Number(day) >= 1 &&
+    Number(day) <= 31 &&
+    year.length === 4 &&
+    Number(year) >= 1900 &&
+    Number(year) <= 2100;
 
   const canSubmit =
-    isFirstNameValid &&
-    isMonthValid &&
-    isDayValid &&
-    isYearValid &&
-    isUsernameValid &&
-    isPasswordValid &&
+    firstName &&
+    username &&
+    password &&
+    isBirthdayValid &&
     agreed;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setFirstNameTouched(true);
-    if (!canSubmit) return;
     setSubmitting(true);
+    setMessage("");
     try {
-      await fetch("/api/signup", {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const res = await fetch("http://localhost:3001/api/auth/signup", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({
           name: `${firstName} ${lastName}`.trim(),
           email: username,
           password,
+          birthday: `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`,
         }),
       });
-      setSuccess(true);
+      const data = await res.json();
+      if (res.ok) {
+        setMessage("Signup successful!");
+      } else {
+        setMessage(data.message || "Signup failed.");
+      }
     } catch {
-      // handle error
+      setMessage("Network error.");
     }
     setSubmitting(false);
   };
-
-  if (success) {
-    return (
-      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md flex flex-col items-center">
-        <div className="flex flex-col items-center mb-6">
-          <div className="bg-yellow-300 rounded-full w-10 h-10 flex items-center justify-center mb-2">
-            <Image src="/snapchat-logo.svg" alt="Snapchat" width={45} height={45} />
-          </div>
-          <h1 className="text-2xl font-bold mb-2">Sign Up Successful!</h1>
-          <button
-            className="text-blue-600 underline mt-2"
-            onClick={onBack}
-          >
-            Back to Login
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md flex flex-col items-center">
@@ -83,7 +72,7 @@ export default function Signup({ onBack }) {
         <h1 className="text-3xl font-bold mb-1">Sign Up</h1>
         <span className="text-gray-600 text-sm mb-2">Step 1 of 3</span>
       </div>
-      <form className="w-full" onSubmit={handleSubmit} autoComplete="off">
+      <form className="w-full" autoComplete="off" onSubmit={handleSubmit}>
         {/* Name fields */}
         <div className="w-full mb-2">
           <label className="block text-sm font-semibold mb-1">Name</label>
@@ -92,20 +81,10 @@ export default function Signup({ onBack }) {
               <input
                 type="text"
                 placeholder="First name"
-                className={`w-full p-3 border rounded-md text-sm outline-none ${
-                  firstNameTouched && !isFirstNameValid
-                    ? "border-red-400"
-                    : "border-gray-300"
-                }`}
+                className="w-full p-3 border border-gray-300 rounded-md text-sm"
                 value={firstName}
                 onChange={e => setFirstName(e.target.value)}
-                onBlur={() => setFirstNameTouched(true)}
               />
-              {firstNameTouched && !isFirstNameValid && (
-                <span className="text-xs text-red-500 mt-1 block">
-                  Please enter your first name
-                </span>
-              )}
             </div>
             <div className="flex-1">
               <input
@@ -129,10 +108,7 @@ export default function Signup({ onBack }) {
               max={12}
               className="w-1/3 p-3 border border-gray-300 rounded-md text-sm"
               value={month}
-              onChange={e => {
-                const val = e.target.value.replace(/\D/g, "");
-                setMonth(val.slice(0, 2));
-              }}
+              onChange={e => setMonth(e.target.value.replace(/\D/g, "").slice(0, 2))}
             />
             <input
               type="number"
@@ -141,10 +117,7 @@ export default function Signup({ onBack }) {
               max={31}
               className="w-1/3 p-3 border border-gray-300 rounded-md text-sm"
               value={day}
-              onChange={e => {
-                const val = e.target.value.replace(/\D/g, "");
-                setDay(val.slice(0, 2));
-              }}
+              onChange={e => setDay(e.target.value.replace(/\D/g, "").slice(0, 2))}
             />
             <input
               type="number"
@@ -153,21 +126,18 @@ export default function Signup({ onBack }) {
               max={2100}
               className="w-1/3 p-3 border border-gray-300 rounded-md text-sm"
               value={year}
-              onChange={e => {
-                const val = e.target.value.replace(/\D/g, "");
-                setYear(val.slice(0, 4));
-              }}
+              onChange={e => setYear(e.target.value.replace(/\D/g, "").slice(0, 4))}
             />
           </div>
           <div className="flex gap-3 mt-1">
             <span className="w-1/3 text-xs text-red-500">
-              {month && !isMonthValid && "Invalid"}
+              {month && !(Number(month) >= 1 && Number(month) <= 12) && "Invalid"}
             </span>
             <span className="w-1/3 text-xs text-red-500">
-              {day && !isDayValid && "Invalid"}
+              {day && !(Number(day) >= 1 && Number(day) <= 31) && "Invalid"}
             </span>
             <span className="w-1/3 text-xs text-red-500">
-              {year && !isYearValid && "Invalid"}
+              {year && !(year.length === 4 && Number(year) >= 1900 && Number(year) <= 2100) && "Invalid"}
             </span>
           </div>
         </div>
@@ -200,7 +170,7 @@ export default function Signup({ onBack }) {
               type="button"
               className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer"
               tabIndex={-1}
-              onClick={() => setShowPassword((v) => !v)}
+              onClick={() => setShowPassword(v => !v)}
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? (
@@ -229,7 +199,7 @@ export default function Signup({ onBack }) {
             type="button"
             aria-label={agreed ? "Uncheck" : "Check"}
             className={`w-5 h-5 flex items-center justify-center border rounded ${agreed ? "border-blue-500 bg-blue-500" : "border-gray-400 bg-white"} transition`}
-            onClick={() => setAgreed((v) => !v)}
+            onClick={() => setAgreed(v => !v)}
             tabIndex={0}
           >
             {agreed && (
@@ -255,8 +225,11 @@ export default function Signup({ onBack }) {
           }`}
           disabled={!canSubmit || submitting}
         >
-          Agree and Continue
+          {submitting ? "Submitting..." : "Agree and Continue"}
         </button>
+        {message && (
+          <div className="text-center text-sm mt-2 text-gray-700">{message}</div>
+        )}
       </form>
       {/* Footer links */}
       <div className="w-full flex flex-col sm:flex-row justify-between items-center mt-4 border-t pt-4 gap-2 text-xs text-gray-600">
