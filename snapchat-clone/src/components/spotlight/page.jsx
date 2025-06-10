@@ -17,14 +17,18 @@ export default function Spotlight() {
 
   // Fetch video data from backend
   useEffect(() => {
-    fetch("http://localhost:3001/api/spotlight")
-      .then((res) => res.json())
-      .then((data) => {
+    async function fetchData() {
+      try {
+        const res = await fetch('/api/spotlight');
+        if (!res.ok) throw new Error('Network response was not ok');
+        const data = await res.json();
         setVideoUrl(data.videoUrl);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch spotlight video:", err);
-      });
+      } catch (error) {
+        console.error('Failed to fetch spotlight data:', error);
+        // Optionally set error state here
+      }
+    }
+    fetchData();
   }, []);
 
   const togglePlay = () => {
@@ -105,15 +109,17 @@ export default function Spotlight() {
       {/* Middle Panel - Spotlight Video */}
       <div className="lg:w-1/2 flex flex-col items-center justify-center p-6 relative">
         <div className="relative w-[300px] h-[530px] rounded-xl overflow-hidden shadow-lg">
-          <video
-            ref={videoRef}
-            src={videoUrl} // Use fetched video URL
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="w-full h-full object-cover"
-          />
+          {videoUrl && (
+            <video
+              ref={videoRef}
+              src={videoUrl} // Use fetched video URL
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="w-full h-full object-cover"
+            />
+          )}
 
           {/* Play/Pause Button */}
           <button
