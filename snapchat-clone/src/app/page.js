@@ -9,26 +9,56 @@ import StoriesPage from "@/components/stories/page";
 import LensesPage from "@/components/lenses/page";
 import SnapchatPlusPage from "@/components/snapchat-plus/page";
 import Signup from "@/components/signup/Signup";
+import SearchResultsPage from "@/components/SearchResultsPage";
 
 import ChatList from "@/components/ui/ChatList";
 import CameraBox from "@/components/ui/CameraBox";
 import { FiSettings, FiUserPlus } from "react-icons/fi";
 
 export default function Home() {
-  const [view, setView] = useState("home");
+  const [view, setViewRaw] = useState("home");
   const [showSignup, setShowSignup] = useState(false);
-  const [loginUsername, setLoginUsername] = useState("");
+  const [loginEmail, setLoginEmail] = useState(""); // Add loginEmail state
   const [loginPassword, setLoginPassword] = useState("");
   const [loginError, setLoginError] = useState("");
+  const [usePhone, setUsePhone] = useState(false);
+  const [countryCode, setCountryCode] = useState("+975");
+  const [loginPhone, setLoginPhone] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const countryCodes = [
+    { code: "+975", label: "BT" },
+    { code: "+91", label: "IN" },
+    { code: "+1", label: "US" },
+    { code: "+44", label: "UK" },
+  ];
+
+  // Add a helper to get max length based on country code
+  function getPhoneMaxLength(code) {
+    switch (code) {
+      case "+975": return 8; // BT
+      case "+91": return 10; // IN
+      case "+1": return 10; // US
+      case "+44": return 11; // UK
+      default: return 15;
+    }
+  }
 
   const handleMainLogin = async (e) => {
     e.preventDefault();
     setLoginError("");
     try {
+      let payload;
+      if (usePhone) {
+        payload = { phone: countryCode + loginPhone, password: loginPassword };
+      } else {
+        payload = { email: loginEmail, password: loginPassword };
+      }
+      // Use absolute URL to backend
       const res = await fetch("http://localhost:3001/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: loginUsername, password: loginPassword }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (res.ok) {
@@ -40,6 +70,12 @@ export default function Home() {
     } catch (err) {
       setLoginError("Network error");
     }
+  };
+
+  // Helper to handle view changes with optional query
+  const setView = (v, q) => {
+    setViewRaw(v);
+    if (v === "search" && q) setSearchQuery(q);
   };
 
   return (
@@ -58,18 +94,60 @@ export default function Home() {
                 </p>
 
                 <form onSubmit={handleMainLogin}>
-                  <input
-                    type="text"
-                    placeholder="Username or email address"
-                    className="mb-4 p-3 border border-gray-300 rounded-md w-full"
-                    value={loginUsername}
-                    onChange={e => setLoginUsername(e.target.value)}
-                    required
-                  />
+                  {!usePhone ? (
+                    <input
+                      type="email"
+                      placeholder="Email address"
+                      className="mb-4 p-3 border border-gray-300 rounded-md w-full"
+                      value={loginEmail}
+                      onChange={e => setLoginEmail(e.target.value)}
+                      required
+                    />
+                  ) : (
+                    <div className="flex mb-4">
+                      <select
+                        value={countryCode}
+                        onChange={e => {
+                          setCountryCode(e.target.value);
+                          setLoginPhone(""); // reset phone on country change
+                        }}
+                        className="p-3 border border-gray-300 rounded-l-md bg-white"
+                        style={{ minWidth: 130, fontSize: "1.1rem" }}
+                      >
+                        {countryCodes.map((c) => (
+                          <option key={c.code} value={c.code}>
+                            {c.label} {c.code}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        type="tel"
+                        placeholder="Phone number"
+                        className="p-3 border-t border-b border-gray-300 rounded-r-md w-full"
+                        style={{ fontSize: "1.1rem", minWidth: 0, flex: 1 }}
+                        value={loginPhone}
+                        maxLength={getPhoneMaxLength(countryCode)}
+                        onChange={e => {
+                          // Only allow digits and respect max length
+                          const maxLen = getPhoneMaxLength(countryCode);
+                          const val = e.target.value.replace(/\D/g, "").slice(0, maxLen);
+                          setLoginPhone(val);
+                        }}
+                        required
+                      />
+                    </div>
+                  )}
 
-                  <Link href="#" className="text-sm text-blue-600 mb-4">
-                    Use phone number instead
-                  </Link>
+                  <button
+                    type="button"
+                    className="text-sm text-blue-600 mb-4 underline bg-transparent border-none p-0"
+                    onClick={() => {
+                      setUsePhone((v) => !v);
+                      setLoginError("");
+                    }}
+                  >
+                    {usePhone ? "Use username or email address instead" : "Use phone number instead"}
+                  </button>
 
                   <input
                     type="password"
@@ -206,6 +284,11 @@ export default function Home() {
           </div>
         )}
 
+        {/* 🔍 Search Results Page */}
+        {view === "search" && (
+          <SearchResultsPage query={searchQuery} />
+        )}
+
         {/* 📦 Placeholder for other views */}
         {!(
           view === "home" ||
@@ -213,7 +296,8 @@ export default function Home() {
           view === "stories" ||
           view === "lenses" ||
           view === "snapchatplus" ||
-          view === "chat"
+          view === "chat" ||
+          view === "search" // <-- add this so placeholder does not show on search
         ) && (
           <div className="flex flex-col items-center justify-center w-full h-screen">
             <h1 className="text-2xl font-bold mb-4">

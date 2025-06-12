@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   ChevronDownIcon,
 } from "lucide-react";
@@ -10,9 +10,9 @@ export default function Spotlight() {
   const [showMore, setShowMore] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
   const [videoUrl, setVideoUrl] = useState("");
-  const [username, setUsername] = useState(""); // New state
-  const [password, setPassword] = useState(""); // New state
-  const [loginError, setLoginError] = useState(""); // New state
+  const [email, setEmail] = useState(""); // use email instead of username
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
   const videoRef = useRef(null);
 
   // Fetch video data from backend
@@ -46,15 +46,16 @@ export default function Spotlight() {
     e.preventDefault();
     setLoginError("");
     try {
-      const res = await fetch("http://localhost:3001/api/login", {
+      // Use absolute URL to backend
+      const res = await fetch("http://localhost:3001/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
       if (res.ok) {
-        // Login successful, handle token or redirect here
         alert("Login successful!");
+        // Optionally handle token here
       } else {
         setLoginError(data.message || "Login failed");
       }
@@ -73,11 +74,11 @@ export default function Spotlight() {
         </p>
         <form onSubmit={handleLogin}>
           <input
-            type="text"
-            placeholder="Username or email address"
+            type="email"
+            placeholder="Email address"
             className="border border-gray-300 rounded-md px-4 py-2 mb-3 w-full"
-            value={username}
-            onChange={e => setUsername(e.target.value)}
+            value={email}
+            onChange={e => setEmail(e.target.value)}
             required
           />
           <input

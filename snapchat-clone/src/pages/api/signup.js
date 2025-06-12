@@ -1,9 +1,9 @@
 export default async function handler(req, res) {
   if (req.method === "POST") {
-    const { name, email, password } = req.body;
+    const { username, password } = req.body;
     
     // This is just dummy logic
-    console.log("New user:", { name, email, password });
+    console.log("New user:", { username, password });
 
     return res.status(200).json({ message: "User created successfully" });
   } else {

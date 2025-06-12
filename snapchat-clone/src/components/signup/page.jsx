@@ -11,6 +11,7 @@ export default function SignupPage() {
   const [year, setYear] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [email, setEmail] = useState(""); // Add email state
   const [showPassword, setShowPassword] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [message, setMessage] = useState("");
@@ -29,6 +30,7 @@ export default function SignupPage() {
     firstName &&
     username &&
     password &&
+    email && // Require email
     isBirthdayValid &&
     agreed;
 
@@ -45,10 +47,9 @@ export default function SignupPage() {
           ...(token ? { "Authorization": `Bearer ${token}` } : {})
         },
         body: JSON.stringify({
-          name: `${firstName} ${lastName}`.trim(),
-          email: username,
-          password,
-          birthday: `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`,
+          username,
+          email,
+          password
         }),
       });
       const data = await res.json();
@@ -130,6 +131,18 @@ export default function SignupPage() {
               {year && !(year.length === 4 && Number(year) >= 1900 && Number(year) <= 2100) && "Invalid"}
             </span>
           </div>
+        </div>
+        {/* Email field */}
+        <div>
+          <label className="block text-sm font-semibold mb-1">Email</label>
+          <input
+            type="email"
+            placeholder="Enter your email"
+            className="w-full p-3 border border-gray-300 rounded-md text-sm"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            required
+          />
         </div>
         {/* Username */}
         <div>

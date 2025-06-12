@@ -7,6 +7,7 @@ import ActionButtons from './ActionButtons';
 import { MdOutlinePlayArrow, MdOutlineChatBubble } from 'react-icons/md';
 import { PiSquaresFourBold } from 'react-icons/pi';
 import { TbStarsFilled } from 'react-icons/tb';
+import SearchBar from './SearchBar';
 
 export default function Navbar({ setView, currentView }) {
   return (
@@ -24,12 +25,8 @@ export default function Navbar({ setView, currentView }) {
         >
           <FaSnapchatGhost className="text-black text-2xl cursor-pointer transition-transform duration-300 ease-in-out transform hover:scale-110" />
         </button>
-        <div
-          onClick={() => setView && setView('search')}
-          className="flex items-center bg-gray-100 px-4 py-1.5 rounded-full text-gray-700 text-sm hover:bg-gray-200 cursor-pointer transition-all duration-200 ease-in-out transform hover:scale-105"
-        >
-          <FiSearch className="w-4 h-4 mr-2" />
-          <span className="font-medium">Search</span>
+        <div style={{ width: 160 }}>
+          <SearchBar setView={setView} />
         </div>
       </div>
 
