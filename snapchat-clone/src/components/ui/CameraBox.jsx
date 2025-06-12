@@ -9,6 +9,32 @@ export default function CameraBox() {
   const [stream, setStream] = useState(null);
   const [photo, setPhoto] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [selectedFilter, setSelectedFilter] = useState('none');
+
+  // List of many filters
+  const filters = [
+    { name: 'None', value: 'none' },
+    { name: 'Grayscale', value: 'grayscale(1)' },
+    { name: 'Sepia', value: 'sepia(1)' },
+    { name: 'Invert', value: 'invert(1)' },
+    { name: 'Blur', value: 'blur(4px)' },
+    { name: 'Brightness+', value: 'brightness(1.5)' },
+    { name: 'Brightness-', value: 'brightness(0.5)' },
+    { name: 'Contrast+', value: 'contrast(2)' },
+    { name: 'Contrast-', value: 'contrast(0.5)' },
+    { name: 'Hue Rotate 90°', value: 'hue-rotate(90deg)' },
+    { name: 'Hue Rotate 180°', value: 'hue-rotate(180deg)' },
+    { name: 'Saturate+', value: 'saturate(2)' },
+    { name: 'Saturate-', value: 'saturate(0.5)' },
+    { name: 'Opacity 50%', value: 'opacity(0.5)' },
+    { name: 'Drop Shadow', value: 'drop-shadow(8px 8px 10px red)' },
+    { name: 'Blur + Grayscale', value: 'blur(2px) grayscale(1)' },
+    { name: 'Sepia + Brightness', value: 'sepia(1) brightness(1.2)' },
+    { name: 'Invert + Contrast', value: 'invert(1) contrast(1.5)' },
+    { name: 'Hue + Saturate', value: 'hue-rotate(270deg) saturate(2)' },
+    { name: 'Blur + Brightness', value: 'blur(2px) brightness(1.5)' },
+    // ...add more if desired...
+  ];
 
   // Start camera only after rendering video element
   useEffect(() => {
@@ -53,7 +79,14 @@ export default function CameraBox() {
     canvas.height = video.videoHeight;
 
     const ctx = canvas.getContext('2d');
+    // Mirror the captured photo
+    ctx.save();
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+    // Apply the selected filter to the canvas context
+    ctx.filter = selectedFilter;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    ctx.restore();
 
     const dataUrl = canvas.toDataURL('image/png');
     setPhoto(dataUrl);
@@ -61,6 +94,23 @@ export default function CameraBox() {
 
   return (
     <div className="bg-[#3a3a3a] w-72 h-96 flex flex-col items-center justify-center rounded-xl shadow-lg p-4 relative">
+      {/* Filter selection */}
+      <div className="mb-2 w-full">
+        <label className="block text-gray-200 text-xs mb-1" htmlFor="filter-select">
+          Filters
+        </label>
+        <select
+          id="filter-select"
+          className="w-full p-2 rounded bg-gray-700 text-white text-xs"
+          value={selectedFilter}
+          onChange={e => setSelectedFilter(e.target.value)}
+        >
+          {filters.map(f => (
+            <option key={f.value} value={f.value}>{f.name}</option>
+          ))}
+        </select>
+      </div>
+
       {isCameraActive ? (
         <>
           <div className="relative w-full h-full mb-2">
@@ -77,6 +127,7 @@ export default function CameraBox() {
               playsInline
               muted
               className="w-full h-full rounded-xl object-cover"
+              style={{ transform: 'scaleX(-1)', filter: selectedFilter }} // Mirror and filter
             />
           </div>
 
