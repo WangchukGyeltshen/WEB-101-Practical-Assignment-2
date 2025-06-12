@@ -25,6 +25,7 @@ export default function Home() {
   const [countryCode, setCountryCode] = useState("+975");
   const [loginPhone, setLoginPhone] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // <-- Add this
 
   const countryCodes = [
     { code: "+975", label: "BT" },
@@ -63,6 +64,7 @@ export default function Home() {
       const data = await res.json();
       if (res.ok) {
         alert("Login successful!");
+        setIsAuthenticated(true); // <-- Set authenticated
         // Optionally redirect or set user state here
       } else {
         setLoginError(data.message || "Login failed");
@@ -248,40 +250,195 @@ export default function Home() {
 
         {/* 💬 Chat Page */}
         {view === "chat" && (
-          <div className="flex h-screen w-full">
-            {/* Left Sidebar */}
-            <aside className="w-1/4 bg-[#1a1a1a] p-5 flex flex-col">
-              <div className="flex items-center justify-between mb-6">
-                <button className="bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white p-2 rounded-full transition duration-200">
-                  <FiSettings size={20} />
-                </button>
-                <button className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-full transition-all duration-200 shadow">
-                  <FiUserPlus size={20} />
-                </button>
+          !isAuthenticated ? (
+            // Show login form like screenshot if not authenticated
+            <div className="flex flex-col items-center justify-center w-full min-h-screen bg-[#f7f7f7]">
+              <div className="bg-white rounded-xl shadow-lg p-8 flex flex-col items-center w-full max-w-sm">
+                <div className="mb-4">
+                  <img src="/snapchat-logo.svg" alt="Snapchat" className="mx-auto w-16 h-16" />
+                </div>
+                <h2 className="text-2xl font-bold mb-2 text-center">Log in to Snapchat</h2>
+                <form onSubmit={handleMainLogin} className="w-full">
+                  <label className="block text-gray-700 text-sm font-semibold mb-1 mt-4">
+                    Username or Email
+                  </label>
+                  {/* Phone/email switcher, like main login */}
+                  {!usePhone ? (
+                    <>
+                      <input
+                        type="email"
+                        placeholder="Email address"
+                        className="mb-2 p-3 border border-gray-300 rounded-md w-full"
+                        value={loginEmail}
+                        onChange={e => setLoginEmail(e.target.value)}
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="text-sm text-blue-600 mb-2 underline bg-transparent border-none p-0"
+                        onClick={() => {
+                          setUsePhone(true);
+                          setLoginError("");
+                        }}
+                      >
+                        Use phone number instead
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex mb-2">
+                        <select
+                          value={countryCode}
+                          onChange={e => {
+                            setCountryCode(e.target.value);
+                            setLoginPhone(""); // reset phone on country change
+                          }}
+                          className="p-3 border border-gray-300 rounded-l-md bg-white"
+                          style={{ minWidth: 90, fontSize: "1.1rem" }}
+                        >
+                          {countryCodes.map((c) => (
+                            <option key={c.code} value={c.code}>
+                              {c.label} {c.code}
+                            </option>
+                          ))}
+                        </select>
+                        <input
+                          type="tel"
+                          placeholder="Phone number"
+                          className="p-3 border-t border-b border-gray-300 rounded-r-md w-full"
+                          style={{ fontSize: "1.1rem", minWidth: 0, flex: 1 }}
+                          value={loginPhone}
+                          maxLength={getPhoneMaxLength(countryCode)}
+                          onChange={e => {
+                            const maxLen = getPhoneMaxLength(countryCode);
+                            const val = e.target.value.replace(/\D/g, "").slice(0, maxLen);
+                            setLoginPhone(val);
+                          }}
+                          required
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        className="text-sm text-blue-600 mb-2 underline bg-transparent border-none p-0"
+                        onClick={() => {
+                          setUsePhone(false);
+                          setLoginError("");
+                        }}
+                      >
+                        Use username or email address instead
+                      </button>
+                    </>
+                  )}
+                  <input
+                    type="password"
+                    placeholder="Password"
+                    className="mb-4 p-3 border border-gray-300 rounded-md w-full"
+                    value={loginPassword}
+                    onChange={e => setLoginPassword(e.target.value)}
+                    required
+                  />
+                  <button
+                    type="submit"
+                    className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-md mb-2 w-full"
+                  >
+                    Next
+                  </button>
+                  {loginError && <div className="text-red-500 mb-2">{loginError}</div>}
+                </form>
+                <div className="mt-4 text-center">
+                  <span className="text-gray-600 text-sm">
+                    New To Snapchat?{" "}
+                    <button
+                      className="text-blue-600 font-bold underline"
+                      onClick={() => {
+                        setShowSignup(true);
+                        setViewRaw("home");
+                      }}
+                    >
+                      Sign Up
+                    </button>
+                  </span>
+                </div>
               </div>
-              <input
-                type="text"
-                placeholder="Search"
-                className="bg-[#2a2a2a] text-white p-3 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow mb-5"
-              />
-              <ChatList />
-            </aside>
 
-            {/* Middle: Camera */}
-            <main className="flex-1 bg-[#2a2a2a] flex items-center justify-center p-3">
-              <CameraBox />
-            </main>
+              {/* Footer like screenshot */}
+              <footer className="w-full mt-8">
+                <div className="flex flex-wrap justify-center gap-8 text-xs text-gray-500">
+                  <div>
+                    <div className="font-bold text-black mb-1">Company</div>
+                    <div>Snap Inc.</div>
+                    <div>Careers</div>
+                    <div>News</div>
+                  </div>
+                  <div>
+                    <div className="font-bold text-black mb-1">Community</div>
+                    <div>Support</div>
+                    <div>Community Guidelines</div>
+                    <div>Safety Center</div>
+                  </div>
+                  <div>
+                    <div className="font-bold text-black mb-1">Advertising</div>
+                    <div>Buy Ads</div>
+                    <div>Advertising Policies</div>
+                    <div>Political Ads Library</div>
+                    <div>Brand Guidelines</div>
+                    <div>Promotions Rules</div>
+                  </div>
+                  <div>
+                    <div className="font-bold text-black mb-1">Legal</div>
+                    <div>Privacy Center</div>
+                    <div>Your Privacy Choices</div>
+                    <div>Cookie Policy</div>
+                    <div>Report Infringement</div>
+                    <div>Custom Creative Tools Terms</div>
+                    <div>Community Geofilter Terms</div>
+                    <div>Lens Studio Terms</div>
+                  </div>
+                  <div>
+                    <div className="font-bold text-black mb-1">Language</div>
+                    <select className="border border-gray-300 rounded px-2 py-1 text-xs">
+                      <option>English (US)</option>
+                    </select>
+                  </div>
+                </div>
+              </footer>
+            </div>
+          ) : (
+            <div className="flex h-screen w-full">
+              {/* Left Sidebar */}
+              <aside className="w-1/4 bg-[#1a1a1a] p-5 flex flex-col">
+                <div className="flex items-center justify-between mb-6">
+                  <button className="bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white p-2 rounded-full transition duration-200">
+                    <FiSettings size={20} />
+                  </button>
+                  <button className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-full transition-all duration-200 shadow">
+                    <FiUserPlus size={20} />
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search"
+                  className="bg-[#2a2a2a] text-white p-3 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow mb-5"
+                />
+                <ChatList />
+              </aside>
 
-            {/* Right Sidebar */}
-            <aside className="w-1/4 bg-[#2a2a2a] flex items-center justify-center p-5">
-              <Image
-                src="/avatar.png"
-                alt="Bitmoji Full"
-                width={320}
-                height={520}
-              />
-            </aside>
-          </div>
+              {/* Middle: Camera */}
+              <main className="flex-1 bg-[#2a2a2a] flex items-center justify-center p-3">
+                <CameraBox />
+              </main>
+
+              {/* Right Sidebar */}
+              <aside className="w-1/4 bg-[#2a2a2a] flex items-center justify-center p-5">
+                <Image
+                  src="/avatar.png"
+                  alt="Bitmoji Full"
+                  width={320}
+                  height={520}
+                />
+              </aside>
+            </div>
+          )
         )}
 
         {/* 🔍 Search Results Page */}
