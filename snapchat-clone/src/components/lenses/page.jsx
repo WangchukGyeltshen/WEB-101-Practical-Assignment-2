@@ -2,8 +2,37 @@
 
 import SnapInfo from '@/components/ui/SnapInfo';
 import Image from 'next/image';
+import { useState } from 'react';
 
-export default function LensesPage() {
+export default function LensesPage({ goToChats }) {
+  // Add login state
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoginError("");
+    setLoading(true);
+    try {
+      const res = await fetch("http://localhost:3001/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (goToChats) goToChats();
+      } else {
+        setLoginError(data.message || "Login failed");
+      }
+    } catch {
+      setLoginError("Network error");
+    }
+    setLoading(false);
+  };
+
   return (
     <main className="flex flex-col lg:flex-row min-h-screen">
       {/* Left: Login + Description */}
@@ -13,22 +42,35 @@ export default function LensesPage() {
           Chat, Snap, and video call your friends. Watch Stories and Spotlight, all from your computer.
         </p>
 
-        {/* You can add a login form here if needed */}
-        <div className="mb-6 space-y-3">
+        {/* Login form */}
+        <form className="mb-6 space-y-3" onSubmit={handleLogin}>
           <input
-            type="text"
-            placeholder="Username or email"
+            type="email"
+            placeholder="Email address"
             className="w-full p-3 border border-gray-300 rounded"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            required
           />
           <input
             type="password"
             placeholder="Password"
             className="w-full p-3 border border-gray-300 rounded"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            required
           />
-          <button className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded">
-            Log In
+          <button
+            type="submit"
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded"
+            disabled={loading}
+          >
+            {loading ? "Logging in..." : "Log In"}
           </button>
-        </div>
+          {loginError && (
+            <div className="text-red-500 text-sm mb-2">{loginError}</div>
+          )}
+        </form>
 
         <p className="text-gray-500 mb-3">
           or continue with downloading Snapchat WebApp

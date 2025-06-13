@@ -1,6 +1,38 @@
 import Image from "next/image";
+import { useState } from "react";
 
-export default function StoriesPage() {
+export default function StoriesPage({ goToChats }) {
+  // Add state for login form
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // Login handler
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoginError("");
+    setLoading(true);
+    try {
+      const res = await fetch("http://localhost:3001/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        // Optionally store token: localStorage.setItem("token", data.token);
+        alert("Login successful!");
+        if (goToChats) goToChats();
+      } else {
+        setLoginError(data.message || "Login failed");
+      }
+    } catch {
+      setLoginError("Network error");
+    }
+    setLoading(false);
+  };
+
   return (
     <div className="flex flex-col lg:flex-row w-full min-h-screen bg-white">
       {/* Left: Login box */}
@@ -10,17 +42,36 @@ export default function StoriesPage() {
           Chat, Snap, and video call your friends. Watch Stories and Spotlight, all from your computer.
         </p>
 
-        <input
-          type="text"
-          placeholder="Username or email address"
-          className="mb-3 p-3 border border-gray-300 rounded-md w-full"
-        />
-
-        <p className="text-blue-500 text-sm mb-3 cursor-pointer">Use phone number instead</p>
-
-        <button className="w-full bg-blue-500 text-white font-bold py-2 rounded-md mb-4 hover:bg-blue-600">
-          Log in
-        </button>
+        {/* Login form */}
+        <form onSubmit={handleLogin}>
+          <input
+            type="email"
+            placeholder="Email address"
+            className="mb-3 p-3 border border-gray-300 rounded-md w-full"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            required
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            className="mb-3 p-3 border border-gray-300 rounded-md w-full"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            required
+          />
+          <p className="text-blue-500 text-sm mb-3 cursor-pointer">Use phone number instead</p>
+          <button
+            type="submit"
+            className="w-full bg-blue-500 text-white font-bold py-2 rounded-md mb-4 hover:bg-blue-600"
+            disabled={loading}
+          >
+            {loading ? "Logging in..." : "Log in"}
+          </button>
+          {loginError && (
+            <div className="text-red-500 text-sm mb-2">{loginError}</div>
+          )}
+        </form>
 
         <p className="text-sm text-gray-600 mb-2">or continue with downloading Snapchat WebApp</p>
 

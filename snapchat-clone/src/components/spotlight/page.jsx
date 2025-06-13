@@ -4,30 +4,36 @@ import { useState, useRef, useEffect } from "react";
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { FaHeart, FaCommentDots, FaShareAlt, FaPlay, FaPause } from "react-icons/fa";
 
-export default function Spotlight() {
+export default function Spotlight({ goToChats }) {
   const [showMore, setShowMore] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0); // Track video & info index
 
-  // List of videos to cycle through
-  const videoList = [
-    "/videos/video1.mp4",
-    "/videos/video2.mp4",
-    "/videos/video3.mp4",
-    "/videos/video4.mp4",
-    "/videos/video5.mp4",
-  ];
+  // Add login state
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // List of corresponding info sections
-  const infoList = [
-    { title: "Village Lifestyle", user: "@USER 1", views: "994", likes: "58k" },
-    { title: "Nature Photography", user: "@USER 2", views: "8,721", likes: "1.3k" },
-    { title: "Urban Dance Moves", user: "@USER 3", views: "21.4k", likes: "5k" },
-    { title: "Foodie Adventures", user: "@USER 4", views: "6,221", likes: "2.4k" },
-    { title: "DIY Home Projects", user: "@USER 5", views: "5,730", likes: "1.8k" },
-  ];
+  const [videoList, setVideoList] = useState([]);
+  const [infoList, setInfoList] = useState([]);
+  const [refresh, setRefresh] = useState(0);
 
   const videoRef = useRef(null);
+
+  useEffect(() => {
+    fetch("http://localhost:3001/api/spotlight/public")
+      .then(res => res.json())
+      .then(data => {
+        setVideoList(data.map(v => v.mediaUrl));
+        setInfoList(data.map((v, i) => ({
+          title: `Spotlight #${i + 1}`,
+          user: `User #${v.userId}`,
+          views: "N/A",
+          likes: "N/A"
+        })));
+      });
+  }, [refresh]);
 
   const togglePlay = () => {
     if (!videoRef.current) return;
@@ -47,29 +53,64 @@ export default function Spotlight() {
     setShowMore(true);
   };
 
+  // Login handler
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoginError("");
+    setLoading(true);
+    try {
+      const res = await fetch("http://localhost:3001/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (goToChats) goToChats();
+      } else {
+        setLoginError(data.message || "Login failed");
+      }
+    } catch {
+      setLoginError("Network error");
+    }
+    setLoading(false);
+  };
+
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-gray-100">
-
       {/* Left Panel – Login Section */}
       <div className="lg:w-1/4 bg-white p-6 flex flex-col justify-center shadow-md fade-in">
         <h2 className="text-2xl font-bold mb-4">Log in to Snapchat</h2>
         <p className="text-gray-600 mb-4">
           Chat, Snap, and video call your friends. Watch Stories and Spotlight on your desktop.
         </p>
-        <form>
+        <form onSubmit={handleLogin}>
           <input
-            type="text"
-            placeholder="Username or email address"
+            type="email"
+            placeholder="Email address"
             className="border border-gray-300 rounded-md px-4 py-2 mb-3 w-full"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            required
           />
           <input
             type="password"
             placeholder="Password"
             className="border border-gray-300 rounded-md px-4 py-2 mb-3 w-full"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            required
           />
-          <button className="bg-blue-500 text-white py-2 rounded-md font-semibold mb-4 hover:bg-blue-600 transition w-full">
-            Log in
+          <button
+            type="submit"
+            className="bg-blue-500 text-white py-2 rounded-md font-semibold mb-4 hover:bg-blue-600 transition w-full"
+            disabled={loading}
+          >
+            {loading ? "Logging in..." : "Log in"}
           </button>
+          {loginError && (
+            <div className="text-red-500 text-sm mb-2">{loginError}</div>
+          )}
         </form>
         <a href="#" className="text-blue-600 text-sm mb-3">Use phone number instead</a>
         <button className="flex items-center justify-center border border-gray-300 py-2 rounded-md mb-4">
@@ -144,10 +185,10 @@ export default function Spotlight() {
 
         {/* Dynamic Info Section */}
         <div className="bg-white p-4 rounded-lg shadow-md mb-4 fade-in">
-          <h2 className="text-xl font-semibold">{infoList[currentIndex].title}</h2>
-          <p className="text-gray-500">{infoList[currentIndex].user}</p>
+          <h2 className="text-xl font-semibold">{infoList[currentIndex]?.title}</h2>
+          <p className="text-gray-500">{infoList[currentIndex]?.user}</p>
           <p className="mt-2 text-sm text-gray-600">
-            {infoList[currentIndex].views} views • {infoList[currentIndex].likes} likes
+            {infoList[currentIndex]?.views} views • {infoList[currentIndex]?.likes} likes
           </p>
         </div>
       </div>
