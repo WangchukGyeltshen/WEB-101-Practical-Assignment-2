@@ -15,6 +15,7 @@ import ChatList from "@/components/ui/ChatList";
 import CameraBox from "@/components/ui/CameraBox";
 import { FiSettings, FiUserPlus } from "react-icons/fi";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import axios from "axios";
 
 export default function Home() {
   const [view, setViewRaw] = useState("home");
@@ -34,6 +35,19 @@ export default function Home() {
   const [spotlightUploading, setSpotlightUploading] = useState(false);
   const [spotlightUploadError, setSpotlightUploadError] = useState('');
   const [refreshSpotlightFeed, setRefreshSpotlightFeed] = useState(0);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [user, setUser] = useState(null);
+  const [showAddFriends, setShowAddFriends] = useState(false);
+  // Add state for search and results in Add Friends popup
+  const [addFriendQuery, setAddFriendQuery] = useState("");
+  const [addFriendResults, setAddFriendResults] = useState([]);
+  const [addFriendLoading, setAddFriendLoading] = useState(false);
+  const [addFriendError, setAddFriendError] = useState("");
+  const [sentRequests, setSentRequests] = useState({}); // { userId: true }
+  // Add state for incoming friend requests
+  const [incomingRequests, setIncomingRequests] = useState([]);
+  const [incomingLoading, setIncomingLoading] = useState(false);
+  const [incomingError, setIncomingError] = useState("");
 
   const countryCodes = [
     { code: "+975", label: "BT" },
@@ -120,6 +134,158 @@ export default function Home() {
       setSpotlightUploadError('Network error');
     }
     setSpotlightUploading(false);
+  };
+
+  // Restore authentication state on mount using JWT from localStorage
+  useEffect(() => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    if (token) {
+      axios.get("http://localhost:3001/api/auth/me", {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(res => {
+          if (res.data && res.data.user) {
+            setIsAuthenticated(true);
+            setUser(res.data.user);
+            setUsername(res.data.user.username || "SnapUser");
+            setViewRaw("chat");
+          } else {
+            setIsAuthenticated(false);
+            setUser(null);
+            setViewRaw("home");
+          }
+        })
+        .catch(() => {
+          setIsAuthenticated(false);
+          setUser(null);
+          setViewRaw("home");
+        });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Search users for Add Friends popup
+  useEffect(() => {
+    if (!showAddFriends || !addFriendQuery.trim()) {
+      setAddFriendResults([]);
+      setAddFriendError("");
+      return;
+    }
+    setAddFriendLoading(true);
+    setAddFriendError("");
+    fetch(`http://localhost:3001/api/users/search?query=${encodeURIComponent(addFriendQuery.trim())}`, {
+      headers: {
+        Authorization: typeof window !== "undefined" ? `Bearer ${localStorage.getItem("token")}` : "",
+      },
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data.users)) {
+          setAddFriendResults(data.users);
+        } else {
+          setAddFriendResults([]);
+          setAddFriendError("No users found.");
+        }
+        setAddFriendLoading(false);
+      })
+      .catch(() => {
+        setAddFriendError("Error searching users.");
+        setAddFriendLoading(false);
+      });
+  }, [addFriendQuery, showAddFriends]);
+
+  // Send friend request
+  const handleSendFriendRequest = async (userId) => {
+    setSentRequests(r => ({ ...r, [userId]: "loading" }));
+    try {
+      const res = await fetch("http://localhost:3001/api/friends/request", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: typeof window !== "undefined" ? `Bearer ${localStorage.getItem("token")}` : "",
+        },
+        body: JSON.stringify({ toUserId: userId }),
+      });
+      if (res.ok) {
+        setSentRequests(r => ({ ...r, [userId]: "sent" }));
+      } else {
+        setSentRequests(r => ({ ...r, [userId]: "error" }));
+      }
+    } catch {
+      setSentRequests(r => ({ ...r, [userId]: "error" }));
+    }
+  };
+
+  // Fetch incoming friend requests when Add Friends popup is shown
+  useEffect(() => {
+    if (!showAddFriends) {
+      setIncomingRequests([]);
+      setIncomingError("");
+      return;
+    }
+    setIncomingLoading(true);
+    setIncomingError("");
+    fetch("http://localhost:3001/api/friends/requests", {
+      headers: {
+        Authorization: typeof window !== "undefined" ? `Bearer ${localStorage.getItem("token")}` : "",
+      },
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data.requests)) {
+          setIncomingRequests(data.requests);
+        } else {
+          setIncomingRequests([]);
+          setIncomingError("No requests.");
+        }
+        setIncomingLoading(false);
+      })
+      .catch(() => {
+        setIncomingError("Error loading requests.");
+        setIncomingLoading(false);
+      });
+  }, [showAddFriends]);
+
+  // Accept/reject friend request
+  const handleRespondFriendRequest = async (requestId, accept) => {
+    try {
+      const res = await fetch("http://localhost:3001/api/friends/respond", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: typeof window !== "undefined" ? `Bearer ${localStorage.getItem("token")}` : "",
+        },
+        body: JSON.stringify({ requestId, accept }),
+      });
+      if (res.ok) {
+        setIncomingRequests(reqs => reqs.filter(r => r.id !== requestId));
+        if (accept) {
+          // Fetch updated friends/chat list so new friend appears
+          fetchFriends(); // <-- Make sure this function updates your chat list state
+        }
+      } else {
+        // Optionally show error
+      }
+    } catch {
+      // Optionally show error
+    }
+  };
+
+  // Example fetchFriends implementation (if you don't have one)
+  const fetchFriends = async () => {
+    try {
+      const res = await fetch("http://localhost:3001/api/friends/list", {
+        headers: {
+          Authorization: typeof window !== "undefined" ? `Bearer ${localStorage.getItem("token")}` : "",
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setFriends(data.friends || []); // setFriends should update your chat list state
+      }
+    } catch {
+      // Optionally handle error
+    }
   };
 
   return (
@@ -454,26 +620,69 @@ export default function Home() {
             </div>
           ) : (
             <div className="flex h-screen w-full relative overflow-hidden">
-              {/* Background image for authenticated chat page */}
-              <img
-                src="/hotair.jpg"
-                alt="Background"
-                className="absolute inset-0 w-full h-full object-cover z-0"
-                style={{ objectPosition: "center", opacity: 0.25, pointerEvents: "none" }}
+              {/* Background image for authenticated chat page (center only) */}
+              <div
+                className="pointer-events-none z-0"
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  bottom: 0,
+                  left: "25vw",
+                  width: "55vw",
+                  height: "100%",
+                  backgroundImage: "url('/hotair.jpg')",
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  opacity: 0.25,
+                }}
               />
               {/* Top left bar: profile, logo, add friend */}
               <div className="absolute top-4 left-4 z-30 flex items-center gap-22">
                 {/* Profile button */}
-                <button
-                  className="bg-black rounded-full shadow p-1 hover:bg-gray-800 transition flex items-center justify-center"
-                  aria-label="User Profile"
-                  style={{ width: 38, height: 38 }}
-                  onClick={() => alert("Profile page coming soon!")}
-                >
-                  <span className="text-white font-bold text-lg select-none">
-                    {(username && username[0]) ? username[0].toUpperCase() : "S"}
-                  </span>
-                </button>
+                <div className="relative">
+                  <button
+                    className="bg-black rounded-full shadow p-1 hover:bg-gray-800 transition flex items-center justify-center"
+                    aria-label="User Profile"
+                    style={{ width: 38, height: 38 }}
+                    onClick={() => setShowProfileMenu((v) => !v)}
+                  >
+                    <span className="text-white font-bold text-lg select-none">
+                      {(username && username[0]) ? username[0].toUpperCase() : "S"}
+                    </span>
+                  </button>
+                  {/* Profile dropdown menu */}
+                  {showProfileMenu && (
+                    <div
+                      className="absolute left-0 mt-2 w-56 bg-[#18181a] rounded-xl shadow-lg border border-[#232325] py-2 z-50"
+                      style={{ minWidth: 220 }}
+                    >
+                      <div className="px-4 py-2 text-gray-400 text-xs font-semibold flex items-center justify-between">
+                        Theme
+                        <span className="text-gray-600 ml-2">Dark</span>
+                      </div>
+                      <button
+                        className="w-full text-left px-4 py-2 text-white hover:bg-[#232325] transition"
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          // Add your account settings logic here
+                        }}
+                      >
+                        Account Settings
+                      </button>
+                      <button
+                        className="w-full text-left px-4 py-2 text-red-500 hover:bg-[#232325] transition"
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          setIsAuthenticated(false);
+                          setViewRaw("home");
+                          localStorage.removeItem("token"); // <-- Clear token on logout
+                        }}
+                      >
+                        Log Out
+                      </button>
+                    </div>
+                  )}
+                </div>
                 {/* Snapchat logo (PNG version) */}
                 <div className="bg-white rounded-full shadow flex items-center justify-center overflow-hidden" style={{ width: 38, height: 38 }}>
                   <img
@@ -483,10 +692,166 @@ export default function Home() {
                   />
                 </div>
                 {/* Add friend button */}
-                <button className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-full transition-all duration-200 shadow" aria-label="Add Friend">
+                <button
+                  className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-full transition-all duration-200 shadow"
+                  aria-label="Add Friend"
+                  onClick={() => {
+                    setShowAddFriends(true);
+                    setAddFriendQuery("");
+                    setAddFriendResults([]);
+                    setAddFriendError("");
+                  }}
+                >
                   <FiUserPlus size={20} />
                 </button>
               </div>
+              {/* Add Friends Popup (outside chat list, sticks out from right of sidebar) */}
+              {showAddFriends && (
+                <div
+                  className="fixed top-0 left-[25%] h-full flex items-start z-50"
+                  style={{ minWidth: 350, maxWidth: 400, marginLeft: 0 }}
+                >
+                  <div
+                    className="bg-[#18181a] rounded-2xl shadow-2xl border border-[#232325] w-[350px] max-w-full p-6"
+                    style={{ minWidth: 320, marginTop: 32, position: "relative" }}
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <h2 className="text-2xl font-bold text-white text-center mb-6">Add Friends</h2>
+                    <div className="flex items-center bg-[#232325] rounded-full px-4 py-3 mb-5">
+                      <svg width="22" height="22" fill="none" viewBox="0 0 24 24" className="text-gray-400 mr-2">
+                        <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2"/>
+                        <path d="M20 20l-3-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                      </svg>
+                      <input
+                        type="text"
+                        placeholder="Search for users..."
+                        className="bg-transparent text-white w-full outline-none placeholder-gray-400"
+                        style={{ fontSize: 16 }}
+                        value={addFriendQuery}
+                        onChange={e => setAddFriendQuery(e.target.value)}
+                        autoFocus
+                      />
+                    </div>
+                    {/* --- Incoming Friend Requests Section --- */}
+                    <div className="mb-4">
+                      <div className="text-gray-300 text-sm font-semibold mb-2">Friend Requests</div>
+                      <div className="bg-[#232325] rounded-xl flex flex-col px-2 py-2 min-h-[40px]">
+                        {incomingLoading && (
+                          <div className="text-blue-400 text-center">Loading...</div>
+                        )}
+                        {incomingError && (
+                          <div className="text-red-400 text-center">{incomingError}</div>
+                        )}
+                        {!incomingLoading && !incomingError && incomingRequests.length === 0 && (
+                          <span className="text-gray-400 text-center text-base font-medium">
+                            No requests.
+                          </span>
+                        )}
+                        {!incomingLoading && incomingRequests.length > 0 && (
+                          <ul className="divide-y divide-[#232325]">
+                            {incomingRequests.map(req => (
+                              <li key={req.id} className="flex items-center justify-between py-2">
+                                <div className="flex items-center gap-3">
+                                  <img
+                                    src={req.fromUser?.avatarUrl || "/avatars/avatar1.png"}
+                                    alt={req.fromUser?.username}
+                                    className="w-9 h-9 rounded-full object-cover"
+                                  />
+                                  <div>
+                                    <div className="font-semibold text-white">{req.fromUser?.username}</div>
+                                    <div className="text-gray-400 text-xs">{req.fromUser?.email}</div>
+                                  </div>
+                                </div>
+                                <div className="flex gap-2">
+                                  <button
+                                    className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded-full text-xs font-semibold"
+                                    onClick={() => handleRespondFriendRequest(req.id, true)}
+                                  >
+                                    Accept
+                                  </button>
+                                  <button
+                                    className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded-full text-xs font-semibold"
+                                    onClick={() => handleRespondFriendRequest(req.id, false)}
+                                  >
+                                    Reject
+                                  </button>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </div>
+                    {/* --- End Friend Requests Section --- */}
+                    <div className="bg-[#232325] rounded-xl flex flex-col min-h-[160px] px-2 py-4">
+                      {addFriendLoading && (
+                        <div className="text-blue-400 text-center">Searching...</div>
+                      )}
+                      {addFriendError && (
+                        <div className="text-red-400 text-center">{addFriendError}</div>
+                      )}
+                      {!addFriendLoading && !addFriendError && addFriendQuery && addFriendResults.length === 0 && (
+                        <span className="text-gray-400 text-center text-base font-medium">
+                          No users found.
+                        </span>
+                      )}
+                      {!addFriendLoading && addFriendResults.length > 0 && (
+                        <ul className="divide-y divide-[#232325]">
+                          {addFriendResults.map(user => (
+                            <li key={user.id} className="flex items-center justify-between py-2">
+                              <div className="flex items-center gap-3">
+                                <img
+                                  src={user.avatarUrl || "/avatars/avatar1.png"}
+                                  alt={user.username}
+                                  className="w-9 h-9 rounded-full object-cover"
+                                />
+                                <div>
+                                  <div className="font-semibold text-white">{user.username}</div>
+                                  <div className="text-gray-400 text-xs">{user.email}</div>
+                                </div>
+                              </div>
+                              {sentRequests[user.id] === "sent" ? (
+                                <span className="text-green-400 text-xs font-semibold">Request Sent</span>
+                              ) : sentRequests[user.id] === "loading" ? (
+                                <span className="text-blue-400 text-xs font-semibold">Sending...</span>
+                              ) : sentRequests[user.id] === "error" ? (
+                                <button
+                                  className="text-red-400 text-xs font-semibold"
+                                  onClick={() => handleSendFriendRequest(user.id)}
+                                >
+                                  Retry
+                                </button>
+                              ) : (
+                                <button
+                                  className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-semibold"
+                                  onClick={() => handleSendFriendRequest(user.id)}
+                                >
+                                  Add
+                                </button>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      {!addFriendQuery && (
+                        <span className="text-gray-400 text-center text-base font-medium">
+                          Search for friends to add
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      className="absolute top-4 right-4 text-gray-400 hover:text-white p-1 rounded-full"
+                      onClick={() => setShowAddFriends(false)}
+                      aria-label="Close"
+                      tabIndex={0}
+                    >
+                      <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
+                        <path d="M6 6l12 12M6 18L18 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              )}
               {/* Left Sidebar */}
               <aside className="w-1/4 bg-[#1a1a1a] p-5 flex flex-col z-20 relative overflow-y-auto h-full">
                 {/* Remove background image from left sidebar by setting background color and z-index */}
@@ -502,7 +867,6 @@ export default function Home() {
                 />
                 <ChatList />
               </aside>
-
               {/* Middle: Camera */}
               <main
                 className="flex-1 bg-[#2a2a2a] flex items-center justify-center p-3 z-10 relative"
@@ -522,7 +886,6 @@ export default function Home() {
                   <CameraBox />
                 </div>
               </main>
-
               {/* Right mini nav bar as a sliding popup */}
               <aside
                 className={`fixed top-0 right-0 h-full w-20 bg-[#232325] flex flex-col items-center z-40 transition-transform duration-300 ease-in-out`}
@@ -578,7 +941,8 @@ export default function Home() {
                   style={{ minWidth: 320, maxWidth: 400 }}
                 >
                   <button
-                    className="absolute top-3 right-3 text-white bg-gray-800 rounded-full p-2 hover:bg-gray-700"
+                    className="absolute right-3 bg-gray-800 text-white rounded-full p-2 hover:bg-gray-700"
+                    style={{ top: '1rem' }} // Move cross button further down (was top-3, now 2.5rem)
                     onClick={() => setShowSpotlightFeed(false)}
                     aria-label="Close Spotlight"
                   >
@@ -604,7 +968,8 @@ export default function Home() {
                   style={{ minWidth: 320, maxWidth: 400 }}
                 >
                   <button
-                    className="absolute top-3 right-3 text-white bg-gray-800 rounded-full p-2 hover:bg-gray-700"
+                    className="absolute right-3 text-white bg-gray-800 rounded-full p-2 hover:bg-gray-700"
+                    style={{ top: '1rem' }} // Move cross button lower (was top-3, now 1rem)
                     onClick={() => setShowStoriesFeed(false)}
                     aria-label="Close Stories"
                   >
@@ -649,6 +1014,8 @@ export default function Home() {
 // --- SpotlightFeedOnly component (vertical scrollable video feed) ---
 function SpotlightFeedOnly({ spotlightUploading, spotlightUploadError, handleSpotlightUpload, refresh, setRefresh }) {
   const [videoList, setVideoList] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const fileInputRef = useRef();
 
   useEffect(() => {
     fetch("http://localhost:3001/api/spotlight/public")
@@ -656,10 +1023,6 @@ function SpotlightFeedOnly({ spotlightUploading, spotlightUploadError, handleSpo
       .then(data => setVideoList(data.map(v => v.mediaUrl)));
   }, [refresh]);
 
-  // New: file input ref for upload
-  const fileInputRef = useRef();
-
-  // New: handle file select
   const onFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -668,20 +1031,23 @@ function SpotlightFeedOnly({ spotlightUploading, spotlightUploadError, handleSpo
       return;
     }
     handleSpotlightUpload(file);
-    e.target.value = ''; // reset input
+    e.target.value = '';
   };
 
-  // After successful upload, call setRefresh to trigger refetch
   useEffect(() => {
     if (!spotlightUploading && !spotlightUploadError && setRefresh) {
       setRefresh(r => r + 1);
     }
   }, [spotlightUploading, spotlightUploadError, setRefresh]);
 
+  // Navigation handlers
+  const handlePrev = () => setCurrentIndex(idx => Math.max(idx - 1, 0));
+  const handleNext = () => setCurrentIndex(idx => Math.min(idx + 1, videoList.length - 1));
+
   return (
-    <div className="flex flex-col items-center w-full h-full py-4 overflow-y-auto gap-6">
+    <div className="flex flex-col items-center w-full h-full py-4 overflow-hidden">
       {/* Plus button for upload */}
-      <div className="w-full flex justify-end pr-10 mb-2">
+      <div className="w-full flex justify-end pr-16 mb-2">{/* <-- was pr-10, now pr-16 */}
         <button
           className="bg-blue-500 hover:bg-blue-600 text-white rounded-full p-2 shadow transition"
           title="Upload to Spotlight"
@@ -704,15 +1070,33 @@ function SpotlightFeedOnly({ spotlightUploading, spotlightUploadError, handleSpo
       {/* Show upload status/error */}
       {spotlightUploading && <div className="text-blue-400 text-xs mb-2">Uploading...</div>}
       {spotlightUploadError && <div className="text-red-500 text-xs mb-2">{spotlightUploadError}</div>}
-      {/* Video feed */}
-      {videoList.map((src, idx) => (
-        <div
-          key={idx}
-          className="w-[260px] h-[460px] rounded-xl overflow-hidden shadow-lg bg-black flex items-center justify-center"
-          style={{ minHeight: 320, marginBottom: 16 }}
-        >
+
+      {/* Up Button */}
+      <button
+        onClick={handlePrev}
+        className="mb-4 flex flex-col items-center text-white"
+        disabled={currentIndex === 0}
+        style={{ opacity: currentIndex === 0 ? 0.5 : 1 }}
+      >
+        <svg width="28" height="28" fill="none" viewBox="0 0 24 24">
+          <path d="M12 8l-6 6h12l-6-6z" fill="currentColor" />
+        </svg>
+        <span className="text-sm">Previous</span>
+      </button>
+
+      {/* Video */}
+      <div
+        className="w-[260px] h-[460px] rounded-xl overflow-hidden shadow-lg bg-black flex items-center justify-center my-6"
+        style={{
+          minHeight: 320,
+          marginBottom: 16,
+          outline: '2px solid #60a5fa',
+          transition: 'outline 0.2s'
+        }}
+      >
+        {videoList.length > 0 && (
           <video
-            src={src}
+            src={videoList[currentIndex]}
             autoPlay
             loop
             muted
@@ -721,33 +1105,147 @@ function SpotlightFeedOnly({ spotlightUploading, spotlightUploadError, handleSpo
             controls
             style={{ background: "#000" }}
           />
-        </div>
-      ))}
+        )}
+      </div>
+
+      {/* Down Button */}
+      <button
+        onClick={handleNext}
+        className="mt-4 flex flex-col items-center text-white"
+        disabled={currentIndex === videoList.length - 1}
+        style={{ opacity: currentIndex === videoList.length - 1 ? 0.5 : 1 }}
+      >
+        <svg width="28" height="28" fill="none" viewBox="0 0 24 24">
+          <path d="M12 16l6-6H6l6 6z" fill="currentColor" />
+        </svg>
+        <span className="text-sm">Next</span>
+      </button>
     </div>
   );
 }
 
-// --- StoriesFeedOnly component (NEW, scrollable vertical video feed) ---
+// --- StoriesFeedOnly component (scrollable vertical video feed, shared for both main and chat popups) ---
 function StoriesFeedOnly() {
-  // You can use the same video list or a different one for stories
-  const videoList = [
-    "/videos/video1.mp4",
-    "/videos/video2.mp4",
-    "/videos/video3.mp4",
-    "/videos/video4.mp4",
-    "/videos/video5.mp4",
-  ];
-  // No need for currentIndex, just scroll
+  const [videoList, setVideoList] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [storyUploading, setStoryUploading] = useState(false);
+  const [storyUploadError, setStoryUploadError] = useState('');
+  const fileInputRef = useRef();
+
+  // Fetch all public stories (like Spotlight public feed)
+  const fetchStories = () => {
+    fetch("http://localhost:3001/api/stories/public")
+      .then(res => res.json())
+      .then(data => setVideoList(data.map(v => v.mediaUrl)));
+  };
+
+  useEffect(() => {
+    fetchStories();
+  }, []);
+
+  useEffect(() => {
+    if (!storyUploading && !storyUploadError) {
+      fetchStories();
+    }
+    // eslint-disable-next-line
+  }, [storyUploading, storyUploadError]);
+
+  const handlePrev = () => setCurrentIndex(idx => Math.max(idx - 1, 0));
+  const handleNext = () => setCurrentIndex(idx => Math.min(idx + 1, videoList.length - 1));
+
+  // Story upload handler
+  const handleStoryUpload = async (file) => {
+    setStoryUploading(true);
+    setStoryUploadError('');
+    const formData = new FormData();
+    formData.append('video', file);
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem('token') : null;
+      const headers = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const res = await fetch('http://localhost:3001/api/stories/upload', {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setStoryUploadError(data.error || 'Upload failed');
+      } else {
+        setStoryUploadError('');
+        fetchStories();
+        setCurrentIndex(0);
+      }
+    } catch (err) {
+      setStoryUploadError('Network error');
+    }
+    setStoryUploading(false);
+  };
+
+  const onFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('video/')) {
+      alert('Only video files are allowed!');
+      return;
+    }
+    handleStoryUpload(file);
+    e.target.value = '';
+  };
+
   return (
-    <div className="flex flex-col items-center w-full h-full py-4 overflow-y-auto gap-6">
-      {videoList.map((src, idx) => (
-        <div
-          key={idx}
-          className="w-[260px] h-[460px] rounded-xl overflow-hidden shadow-lg bg-black flex items-center justify-center"
-          style={{ minHeight: 320, marginBottom: 16 }}
+    <div className="flex flex-col items-center w-full h-full py-4 overflow-hidden">
+      {/* Plus button for upload */}
+      <div className="w-full flex justify-end pr-16 mb-2">
+        <button
+          className="bg-blue-500 hover:bg-blue-600 text-white rounded-full p-2 shadow transition"
+          title="Upload to Stories"
+          onClick={() => fileInputRef.current && fileInputRef.current.click()}
+          style={{ marginBottom: 8 }}
         >
+          <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="11" stroke="white" strokeWidth="2" />
+            <path d="M12 7v10M7 12h10" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        </button>
+        <input
+          type="file"
+          accept="video/*"
+          ref={fileInputRef}
+          style={{ display: 'none' }}
+          onChange={onFileChange}
+        />
+      </div>
+      {/* Show upload status/error */}
+      {storyUploading && <div className="text-blue-400 text-xs mb-2">Uploading...</div>}
+      {storyUploadError && <div className="text-red-500 text-xs mb-2">{storyUploadError}</div>}
+
+      {/* Up Button */}
+      <button
+        onClick={handlePrev}
+        className="mb-4 flex flex-col items-center text-white"
+        disabled={currentIndex === 0}
+        style={{ opacity: currentIndex === 0 ? 0.5 : 1 }}
+      >
+        <svg width="28" height="28" fill="none" viewBox="0 0 24 24">
+          <path d="M12 8l-6 6h12l-6-6z" fill="currentColor" />
+        </svg>
+        <span className="text-sm">Previous</span>
+      </button>
+
+      {/* Video */}
+      <div
+        className="w-[260px] h-[460px] rounded-xl overflow-hidden shadow-lg bg-black flex items-center justify-center my-6"
+        style={{
+          minHeight: 320,
+          marginBottom: 16,
+          outline: '2px solid #60a5fa',
+          transition: 'outline 0.2s'
+        }}
+      >
+        {videoList.length > 0 ? (
           <video
-            src={src}
+            src={videoList[currentIndex]}
             autoPlay
             loop
             muted
@@ -756,8 +1254,23 @@ function StoriesFeedOnly() {
             controls
             style={{ background: "#000" }}
           />
-        </div>
-      ))}
+        ) : (
+          <div className="text-white text-center">No stories yet.</div>
+        )}
+      </div>
+
+      {/* Down Button */}
+      <button
+        onClick={handleNext}
+        className="mt-4 flex flex-col items-center text-white"
+        disabled={currentIndex === videoList.length - 1 || videoList.length === 0}
+        style={{ opacity: currentIndex === videoList.length - 1 || videoList.length === 0 ? 0.5 : 1 }}
+      >
+        <svg width="28" height="28" fill="none" viewBox="0 0 24 24">
+          <path d="M12 16l6-6H6l6 6z" fill="currentColor" />
+        </svg>
+        <span className="text-sm">Next</span>
+      </button>
     </div>
   );
 }

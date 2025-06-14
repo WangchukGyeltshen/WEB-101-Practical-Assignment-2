@@ -1,45 +1,100 @@
-# WEB-101-Practical-Assignment-2
+# Snapchat Clone
 
-Assignment 2: Frontend Foundation & Application
-Structure
-Introduction
-In this first assignment, you will establish the foundation for your web application by setting up
-the development environment, implementing core routing functionality, and creating essential UI
-components. This assignment focuses on building a strong foundation/structure that will support
-the additional features in upcoming assignments.
-Learning Outcomes
-LO1: Describe fundamental concepts of web development (package managers, runtime
-environments, frameworks)
-LO3: Develop a multiple-page application using routing techniques
-LO7: Design and implement reusable components adhering to single responsibility principle
-Project Overview
-1. Project Planning:
-○ Select an application to develop (either a new concept or based on an existing
-app)
-○ Define the core functionalities that will showcase the learning outcomes
-○ Discuss a basic project plan outlining the features to be implemented across all
-assignments
-2. Development Environment Setup:
-○ Set up a React/Next.js frontend framework
-○ Set up a remote repository on GitHub for code collaboration between your team
-members
-3. Application Structure & Routing:
-○ Document the file-based routing structure in the README file
-○ Implement navigation to reusable components using slugs. (example. For
-instagram a reusable component for the reels page could ingest the data and be
-reused multiple times based on the data given from the server)
-https://nextjs.org/docs/14/app/building-your-application/routing/dynamic-routes
-○ Set up route guards/protection for pages that will require authentication later
-4. Component Development:
-○ Plan and document on the readme file on the creation of the reusable UI
-components based on your topic
-5. Documentation:
-○ Document the project setup and architecture in the README.md
-○ Include clear instructions for setting up the development environment
-○ Document each component with its purpose, props/inputs, and usage examples
-○ Add comprehensive code comments explaining complex logic
-■ https://docs.google.com/presentation/d/1w9sbOdxwRDW8yB6RBrInw3tY
-g3AgvlEL/edit?usp=sharing&ouid=115156060829667035916&rtpof=true&
-sd=true
-■ Penalty: per commit and branching strategy not being adhered would
-result in a mark deducted per offense
+This is a Snapchat-inspired web application built with [Next.js](https://nextjs.org), React, Firebase, and Tailwind CSS. The project demonstrates modern frontend development practices, including modular component design, real-time chat, camera integration, and dynamic video feeds.
+
+## Features
+
+- **Authentication:** Sign up and log in with email, phone, or username.
+- **Real-Time Chat:** Chat with friends using a Firebase-backed chat system.
+- **Camera Integration:** Capture photos with filters using the webcam.
+- **Stories & Spotlight:** Watch and upload short videos, similar to Snapchat Stories and Spotlight.
+- **Lenses:** Browse and preview popular Snapchat-style lenses.
+- **Snapchat+:** Explore premium features in a dedicated section.
+- **Add Friends:** Search for users and manage friend requests.
+- **Responsive UI:** Built with Tailwind CSS for a modern, mobile-friendly experience.
+
+## Project Structure
+
+```
+snapchat-clone/
+  public/                # Static assets (images, videos, icons)
+  src/
+    app/                 # Next.js app directory (routing, pages, layout)
+    components/          # Reusable React components (UI, features)
+    firebaseConfig.js    # Firebase initialization
+  package.json           # Project dependencies and scripts
+  tailwind.config.js     # Tailwind CSS configuration
+  postcss.config.mjs     # PostCSS configuration
+  jsconfig.json          # Path aliases for imports
+  ...
+```
+
+## Getting Started
+
+### 1. Install Dependencies
+
+```bash
+npm install
+# or
+yarn install
+```
+
+### 2. Configure Firebase
+
+Update `src/firebaseConfig.js` with your Firebase project credentials.
+
+### 3. Run the Development Server
+
+```bash
+npm run dev
+# or
+yarn dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser to view the app.
+
+### 4. Backend API
+
+This project expects a backend API running at `http://localhost:3001` for authentication, stories, spotlight, and friends features. Make sure your backend server is running and accessible.
+
+## Routing Structure
+
+- `/` - Home/Login
+- `/chat/[name]` - Chat with a user
+- `/stories` - Stories feed and login
+- `/spotlight` - Spotlight video feed
+- `/lenses` - Lenses gallery and login
+- `/snapchatplus` - Snapchat+ premium features
+
+## Reusable Components
+
+- `Navbar` - Top navigation bar with search and navigation items
+- `ChatList` - Sidebar chat list
+- `CameraBox` - Camera interface with filters
+- `SnapInfo` - Lens/story card
+- `SearchBar` - Search input for users and content
+- `Signup` - Signup form component
+
+## Styling
+
+- [Tailwind CSS](https://tailwindcss.com/) is used for all styling.
+- Custom styles can be added in `src/app/globals.css`.
+
+## Deployment
+
+You can deploy this app easily on [Vercel](https://vercel.com/) or any platform that supports Next.js.
+
+## Contributing
+
+1. Fork the repository.
+2. Create a new branch (`git checkout -b feature/your-feature`).
+3. Commit your changes.
+4. Push to your branch and open a Pull Request.
+
+## License
+
+This project is for educational purposes.
+
+---
+
+**Note:** This project is not affiliated with or endorsed by Snap Inc. It is a learning exercise inspired by Snapchat's
